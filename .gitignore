@@ -1,0 +1,28 @@
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Database (don't push real user data to GitHub)
+database.db
+*.sqlite3
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Uploaded resumes (don't push user files)
+uploads/
+*.pdf
+
+# OS / editor junk
+.DS_Store
+.vscode/
+.idea/
+
+# Environment variables / secrets
+.env

@@ -1,0 +1,9 @@
+streamlit==1.38.0
+pypdf==5.9.0
+spacy==3.7.5
+pandas==2.2.2
+numpy==1.26.4
+matplotlib==3.9.0
+plotly==5.22.0
+streamlit-authenticator==0.4.1
+fpdf2==2.7.9
