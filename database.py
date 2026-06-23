@@ -221,17 +221,54 @@ def get_results_for_user(user_id):
 
 if __name__ == "__main__":
     # Running this file directly (python database.py) sets up the database
-    # and seeds a few starter job roles + skills so the app has something to work with.
+    # and seeds starter job roles + skills + role-skill mappings,
+    # so ATS scoring has real data to compare against.
     init_db()
     print("Database initialized successfully.")
 
-    # Seed a few job roles
+    # ---- Seed job roles ----
     add_job_role("Data Analyst", "Analyzes data to support business decisions")
     add_job_role("Backend Developer", "Builds server-side application logic")
     add_job_role("Machine Learning Engineer", "Builds and deploys ML models")
 
-    # Seed a few skills
-    for skill in ["Python", "SQL", "Excel", "Machine Learning", "Communication", "Git"]:
-        add_skill(skill)
+    # ---- Seed master skills list ----
+    skills_master = [
+        ("Python", "Technical"), ("SQL", "Technical"), ("Excel", "Tools"),
+        ("Machine Learning", "Technical"), ("Communication", "Soft Skills"),
+        ("Git", "Tools"), ("Java", "Technical"), ("REST API", "Technical"),
+        ("Django", "Technical"), ("Flask", "Technical"), ("Docker", "Tools"),
+        ("AWS", "Tools"), ("Pandas", "Technical"), ("NumPy", "Technical"),
+        ("Data Visualization", "Technical"), ("Power BI", "Tools"),
+        ("Tableau", "Tools"), ("TensorFlow", "Technical"), ("PyTorch", "Technical"),
+        ("Deep Learning", "Technical"), ("Statistics", "Technical"),
+        ("Problem Solving", "Soft Skills"), ("Teamwork", "Soft Skills"),
+        ("Leadership", "Soft Skills"),
+    ]
+    for name, category in skills_master:
+        add_skill(name, category)
 
-    print("Seed data inserted.")
+    # ---- Map which skills belong to which role ----
+    # role_id 1 = Data Analyst, 2 = Backend Developer, 3 = ML Engineer
+    role_skill_map = {
+        "Data Analyst": ["Python", "SQL", "Excel", "Data Visualization",
+                          "Power BI", "Tableau", "Statistics", "Communication", "Pandas"],
+        "Backend Developer": ["Python", "Java", "REST API", "Django", "Flask",
+                               "Git", "Docker", "AWS", "SQL", "Problem Solving"],
+        "Machine Learning Engineer": ["Python", "Machine Learning", "Deep Learning",
+                                       "TensorFlow", "PyTorch", "Statistics",
+                                       "NumPy", "Pandas", "SQL", "Problem Solving"],
+    }
+
+    roles = {row["role_name"]: row["role_id"] for row in get_all_job_roles()}
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT skill_id, skill_name FROM skills")
+    skill_ids = {row["skill_name"]: row["skill_id"] for row in cur.fetchall()}
+    conn.close()
+
+    for role_name, skill_list in role_skill_map.items():
+        role_id = roles[role_name]
+        for skill_name in skill_list:
+            link_skill_to_role(role_id, skill_ids[skill_name])
+
+    print("Seed data inserted (job roles, skills, and role-skill mappings).")
