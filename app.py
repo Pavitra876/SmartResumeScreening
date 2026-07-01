@@ -5,6 +5,8 @@ from resume_processing.pdf_reader import extract_text_from_pdf, get_basic_stats
 from resume_processing.skill_extractor import extract_skills_from_text
 from resume_processing.ats_calculator import analyze_resume_for_role
 from recommendation.career_advisor import build_recommendation, suggest_alternative_roles
+from reports.pdf_report import generate_report
+from admin.dashboard import show_admin_dashboard
 import theme
 
 st.set_page_config(page_title="Smart Resume Screening", page_icon="📄", layout="wide")
@@ -24,8 +26,17 @@ def show_dashboard():
     st.sidebar.markdown(f"**{st.session_state['user_name']}**")
     st.sidebar.caption(st.session_state['user_role'].capitalize())
     st.sidebar.markdown("---")
+
+    page = "Resume Analysis"
+    if st.session_state["user_role"] == "admin":
+        page = st.sidebar.radio("Navigate", ["Resume Analysis", "Admin Dashboard"])
+    st.sidebar.markdown("---")
     if st.sidebar.button("Logout", use_container_width=True):
         login.logout()
+
+    if page == "Admin Dashboard":
+        show_admin_dashboard()
+        return
 
     theme.card_open(eyebrow="Step 1", title="📤 Upload Your Resume")
     uploaded_file = st.file_uploader("Choose a PDF resume", type=["pdf"], label_visibility="collapsed")
@@ -85,10 +96,8 @@ def show_dashboard():
 
             theme.card_open(eyebrow="Result", title=f"📊 {selected_role_name}")
             gauge_col, summary_col = st.columns([1, 2])
-
             with gauge_col:
                 st.markdown(theme.render_score_gauge(score), unsafe_allow_html=True)
-
             with summary_col:
                 st.markdown(
                     f"<span class='src-pill src-pill-match'>{analysis['total_matched']} matched</span> "
@@ -111,15 +120,12 @@ def show_dashboard():
             with col_gap:
                 st.markdown("**⚠️ Skill Gap**")
                 theme.render_skill_chips(analysis["missing_skills"], kind="gap")
-
             theme.card_close()
 
-            # ---- Career Recommendations ----
             recommendation = build_recommendation(score, analysis["missing_skills"])
 
             theme.card_open(eyebrow="Step 3", title="🧭 Your Career Roadmap")
             st.write(recommendation["verdict"])
-
             if recommendation["roadmap"]:
                 st.markdown("##### Priority skills to learn next")
                 for item in recommendation["roadmap"]:
@@ -138,20 +144,34 @@ def show_dashboard():
                     r_skills = database.get_skills_for_role(role["role_id"])
                     r_found = extract_skills_from_text(extracted_text, r_skills)
                     r_analysis = analyze_resume_for_role(r_found, r_skills)
-                    all_role_scores.append({
-                        "role_name": role["role_name"],
-                        "score": r_analysis["ats_score"],
-                    })
-
-                alternatives = suggest_alternative_roles(
-                    all_role_scores, current_role=selected_role_name, threshold=50.0
-                )
-
+                    all_role_scores.append({"role_name": role["role_name"], "score": r_analysis["ats_score"]})
+                alternatives = suggest_alternative_roles(all_role_scores, current_role=selected_role_name)
                 if alternatives:
                     st.markdown("##### 💡 You may be a stronger fit for")
                     for alt in alternatives:
                         st.markdown(f"- **{alt['role_name']}** — {alt['score']}% match")
+            theme.card_close()
 
+            theme.card_open(eyebrow="Step 4", title="📥 Download Your Report")
+            st.write("Get a full PDF summary of your ATS analysis and career roadmap.")
+            pdf_bytes = generate_report(
+                user_name=st.session_state["user_name"],
+                resume_name=uploaded_file.name,
+                role_name=selected_role_name,
+                ats_score=score,
+                matched_skills=analysis["matched_skills"],
+                missing_skills=analysis["missing_skills"],
+                verdict=recommendation["verdict"],
+                roadmap=recommendation["roadmap"],
+            )
+            st.download_button(
+                label="⬇️ Download PDF Report",
+                data=pdf_bytes,
+                file_name=f"ATS_Report_{selected_role_name.replace(' ', '_')}.pdf",
+                mime="application/pdf",
+                type="primary",
+                use_container_width=True,
+            )
             theme.card_close()
 
 
