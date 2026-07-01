@@ -44,40 +44,57 @@ def login_user(email, password):
 
 def show_auth_page():
     """Renders the login/register UI. Call this from app.py when no user is logged in."""
-    st.title("📄 Smart Resume Screening and Career Improvement System")
+    import theme
 
-    tab_login, tab_register = st.tabs(["Login", "Register"])
+    col_l, col_mid, col_r = st.columns([1, 1.4, 1])
+    with col_mid:
+        st.markdown(
+            """
+            <div style="text-align:center; margin-top:2.5rem; margin-bottom:0.5rem;">
+                <div style="font-size:2.4rem;">📄</div>
+                <h1 style="margin-bottom:0;">Smart Resume Screening</h1>
+                <p style="color:#64748B; margin-top:0.2rem; font-size:1rem;">
+                    & Career Improvement System
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    with tab_login:
-        st.subheader("Login to your account")
-        login_email = st.text_input("Email", key="login_email")
-        login_password = st.text_input("Password", type="password", key="login_password")
+        theme.card_open()
+        tab_login, tab_register = st.tabs(["Login", "Register"])
 
-        if st.button("Login", key="login_button"):
-            success, user, message = login_user(login_email, login_password)
-            if success:
-                st.session_state["logged_in"] = True
-                st.session_state["user_id"] = user["user_id"]
-                st.session_state["user_name"] = user["name"]
-                st.session_state["user_role"] = user["role"]
-                st.success(message)
-                st.rerun()
-            else:
-                st.error(message)
+        with tab_login:
+            st.subheader("Welcome back")
+            login_email = st.text_input("Email", key="login_email")
+            login_password = st.text_input("Password", type="password", key="login_password")
 
-    with tab_register:
-        st.subheader("Create a new account")
-        reg_name = st.text_input("Full Name", key="reg_name")
-        reg_email = st.text_input("Email", key="reg_email")
-        reg_password = st.text_input("Password", type="password", key="reg_password")
-        reg_role = st.selectbox("Account Type", ["student", "admin"], key="reg_role")
+            if st.button("Login", key="login_button", type="primary", use_container_width=True):
+                success, user, message = login_user(login_email, login_password)
+                if success:
+                    st.session_state["logged_in"] = True
+                    st.session_state["user_id"] = user["user_id"]
+                    st.session_state["user_name"] = user["name"]
+                    st.session_state["user_role"] = user["role"]
+                    st.success(message)
+                    st.rerun()
+                else:
+                    st.error(message)
 
-        if st.button("Register", key="register_button"):
-            success, message = register_user(reg_name, reg_email, reg_password, reg_role)
-            if success:
-                st.success(message)
-            else:
-                st.error(message)
+        with tab_register:
+            st.subheader("Create your account")
+            reg_name = st.text_input("Full Name", key="reg_name")
+            reg_email = st.text_input("Email", key="reg_email")
+            reg_password = st.text_input("Password", type="password", key="reg_password")
+            reg_role = st.selectbox("Account Type", ["student", "admin"], key="reg_role")
+
+            if st.button("Register", key="register_button", type="primary", use_container_width=True):
+                success, message = register_user(reg_name, reg_email, reg_password, reg_role)
+                if success:
+                    st.success(message)
+                else:
+                    st.error(message)
+        theme.card_close()
 
 
 def logout():
